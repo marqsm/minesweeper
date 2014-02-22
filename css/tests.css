@@ -1,0 +1,4 @@
+#test       { padding: 10px 10px 10px 0px; list-style-position: inside; }
+#test li    { border-bottom: 1px solid #ccc; padding: 5px;}
+.ok         { background: #dfd; }
+.fail       { background: #fac; margin: 4px 0; }
