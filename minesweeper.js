@@ -1,7 +1,10 @@
 // TODO: when functionality OK, refactor to more intelligent structure
-// TODO: Rendering HTML grid
-// TODO: attach events, make interface functional
+// TODO: Add failed-situation, show mines
+// TODO: Add counter, show how many mines left
 
+// IMPROVEMENT: Add way to change number of mines
+// IMPROVEMENT: Add way to restart
+// IMPROVEMENT: Add way flag mines
 
 var grid = [],
     gridSize,
@@ -17,7 +20,7 @@ function Cell(hasMine, shown, marked, position) {
     this.shown = shown ? true : false;
     this.marked = marked ? true : false;
     this.displayContent = '?';
-    this.position = position ? position : null;
+    this.position = !M.isUndefined(position) ? position : null;
 
     this.open = function() {
         // If has a mine, return false. If no mine, return true.
@@ -53,14 +56,55 @@ var openCell = function(cell) {
         if (cell.displayContent === 0) {
             openAdjacentNonMineCells(cell);
         }
-
         // renderGrid here at least for now, move to clickHandler or somewhere more later.
         renderGrid();
-      return cell.displayContent;
+        if (isGameSolved()) {
+            alert('Congratulations! Game solved!');
+        }
+        return cell.displayContent;
     } else {
-        // TODO: has mine
+        gameFailed();
         return false;
     }
+}
+
+var markCell = function(x, y) {
+    var cell = grid[getPos(x, y)];
+    return cell.mark(); // returns current marked status
+}
+
+/*****************************
+ * Get adjacent squares, to open empty
+ ****************************/
+var getAdjacentCells = function(cell) {
+    var adjacent = [],
+        x = cell.position % gridSize,
+        y = Math.floor(cell.position / gridSize),
+        isTopRow    = y === 0 ? true : false,
+        isBottomRow = y === (gridSize - 1) ? true : false,
+        isLeftEdge  = x === 0 ? true : false,
+        isRightEdge = x === (gridSize - 1) ? true : false;
+
+    console.log('getAdjacentCells for x:' + x + ' y:' + y );
+    // Returns adjacent cells, checks if they are not out of bounds.
+    if (!isTopRow)    adjacent.push(grid[getPos(x, y - 1)]);
+    if (!isLeftEdge)  adjacent.push(grid[getPos(x - 1, y)]);
+    if (!isRightEdge) adjacent.push(grid[getPos(x + 1, y)]);
+    if (!isBottomRow) adjacent.push(grid[getPos(x, y + 1)]);
+
+    if (!isTopRow && !isLeftEdge)     adjacent.push(grid[getPos(x - 1, y - 1)])
+    if (!isTopRow && !isRightEdge)    adjacent.push(grid[getPos(x + 1, y - 1)])
+    if (!isBottomRow && !isLeftEdge)  adjacent.push(grid[getPos(x - 1, y + 1)])
+    if (!isBottomRow && !isRightEdge) adjacent.push(grid[getPos(x + 1, y + 1)])
+
+    return adjacent;
+}
+
+var getAdjacentMinesCount = function(cell) {
+    var mines = M.filter(getAdjacentCells(cell), function(cell) {
+        return cell.hasMine === true;
+    });
+    return mines.length;
 }
 
 var openAdjacentNonMineCells = function(cell) {
@@ -80,49 +124,45 @@ var openAdjacentNonMineCells = function(cell) {
     }
 }
 
-var markCell = function(x, y) {
-    var cell = grid[getPos(x, y)];
-    return cell.mark(); // returns current marked status
-}
-
 /*****************************
  * Things happening after player actions
  ****************************/
+var showAllCells = function() {
+    var mineCounts, notShownCells;
 
-var getAdjacentCells = function(cell) {
-    var adjacent = [],
-        x = cell.position % gridSize,
-        y = Math.floor(cell.position / gridSize),
-        isTopRow = y === 0 ? true : false,
-        isBottomRow = y === (gridSize - 1) ? true : false,
-        isLeftEdge = x === 0 ? true : false,
-        isRightEdge = x === (gridSize - 1) ? true : false;
-
-    console.log('getAdjacentCells for x:' + x + ' y:' + y );
-    // Returns adjacent cells, checks if they are not out of bounds.
-    if (!isTopRow)    adjacent.push(grid[getPos(x, y - 1)]);
-    if (!isLeftEdge)  adjacent.push(grid[getPos(x - 1, y)]);
-    if (!isRightEdge) adjacent.push(grid[getPos(x + 1, y)]);
-    if (!isBottomRow) adjacent.push(grid[getPos(x, y + 1)]);
-
-    return adjacent;
-}
-
-
-var getAdjacentMinesCount = function(cell) {
-    var mines = M.filter(getAdjacentCells(cell), function(cell) {
-        return cell.hasMine === true;
+    notShownCells = M.filter(grid, function(cell) {
+        return !cell.isShown;
     });
-    return mines.length;
+    mineCounts = M.map(notShownCells, getAdjacentMinesCount)
+
+    M.foreach(notShownCells, function(cell, index) {
+        cell.displayContent = mineCounts[index];
+        cell.shown = true;
+    })
+    renderGrid();
 }
+
+var gameFailed = function() {
+    showAllCells();
+    alert('Too bad! Refresh to replay!');
+}
+
+var isGameSolved = function() {
+    var unknownCells = M.filter(grid, function(cell) { return !cell.shown; })
+
+    if (unknownCells.length === minesCount) {
+        return true
+    }
+    return false;
+}
+
 
 /******************************
  * Setup
  *****************************/
 
 var initGrid = function(size, minesCount) {
-    var i, minePos,
-        minesPositions = [];
+    var i, minePos;
 
     gridSize = size;
 
@@ -135,8 +175,7 @@ var initGrid = function(size, minesCount) {
     i = 0;
     while (i < minesCount) {
         minePos = Math.floor(Math.random()*size * size);
-        if (!M.contains(minesPositions, minePos)) {
-            console.log('Set mine number ' + i + ' to ' + minePos);
+        if (!grid[minePos].hasMine) {
             grid[minePos].hasMine = true;
             i++;
         }
@@ -157,15 +196,22 @@ var getPos = function(x, y) {
  *****************************/
 
 var renderCell = function(cell) {
-    // TODO: return rendered cell
+    // TODO: cleaner html build
+    var cellHtml;
 
     if (cell.shown) {
-        if (cell.hasMine) return 'O';
-        return cell.displayContent;
+        if (cell.hasMine) {
+            cellHtml = '<span data-id="' + cell.position + '" class="mine">O</span>';
+        } else {
+            cellHtml = '<span data-id="' + cell.position + '" class="number">';
+            cellHtml += cell.displayContent == 0 ? '&nbsp;' : cell.displayContent;
+            cellHtml += '</span>';
+        }
+        return cellHtml;
     } else {
-        return 'X';
+        cellHtml = '<span data-id="' + cell.position + '" class="unknown">X</span>';
+        return cellHtml;
     }
-    return false;
 }
 
 var renderGrid = function() {
@@ -174,26 +220,35 @@ var renderGrid = function() {
     gridEl.innerHTML = '';
 
     for (j = 0; j < gridSize; j++) {
-        s = '';
+        s = '<div class="row">';
         for (i = 0; i < gridSize; i++) {
             s += renderCell(grid[getPos(i, j)]);
         }
-        gridEl.innerHTML += s + '<br />';
+        gridEl.innerHTML += s + '</div>';
     }
-    // TODO: render to container inside el
+}
+
+var openCellHandler = function(event) {
+    var cellPos = event.srcElement.getAttribute('data-id');
+    openCell(grid[cellPos]);
+    console.log(event);
 }
 
 var attachEvents = function() {
+    var el = document.getElementById('msGrid');
+    el.addEventListener('click', openCellHandler, true);
     // TODO: attach events to el
 }
 
-var initGame = function(size, minesCount, el) {
+var initGame = function(size, mines, el) {
     gridEl = document.createElement('div');
     gridEl.setAttribute('id', 'msGrid');
     el.appendChild(gridEl);
+    minesCount = mines;
 
     initGrid(size, minesCount);
     renderGrid();
+    attachEvents();
 }
 
 initGame(10, 10, document.getElementById('mineSweeper'));

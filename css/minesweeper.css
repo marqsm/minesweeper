@@ -1,1 +1,7 @@
 body { font-family: monospace; }
+
+#mineSweeper span       { border: 1px solid #aaa; padding: 4px; cursor: pointer; float:left; }
+#mineSweeper .unknown   { background: #ccc;}
+#mineSweeper .number    { background: ;}
+#mineSweeper .mine      { background: #f00; }
+#mineSweeper .row       { height: 24px; clear: left;}
