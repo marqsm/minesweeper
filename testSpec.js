@@ -1,11 +1,8 @@
 (function(context) {
     var T = context.T;
 
-    //T.assertEquals('test', 1, 2);
-    //T.assertEquals('test', 1, 1);
-
     // getAdjacentCells
-    var adjCells = getAdjacentCells(grid[10]);
+    var adjCells = ms.getAdjacentCells(grid[10]);
 
     M.foreach(adjCells, function(cell) {
         console.log(cell);
@@ -15,10 +12,7 @@
 
     var adjCells = getAdjacentCells(grid[getPos(1, 2)]);
     T.assertEquals('from (1, 1) get 8 adjacent cells', adjCells.length, 8);
+
     var adjCells = getAdjacentCells(grid[getPos(4, 9)]);
     T.assertEquals('from (4, 9) get 5 adjacent cells', adjCells.length, 5);
-
-
-
-
 })(window);
