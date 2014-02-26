@@ -1,6 +1,3 @@
-// TODO: when functionality OK, refactor to more intelligent structure
-// TODO: Add failed-situation, show mines
-// TODO: Add counter, show how many mines left
 
 // IMPROVEMENT: Add way to change number of mines
 // IMPROVEMENT: Add way to restart
@@ -22,18 +19,12 @@ function mineSweeper(size, mines, el) {
         this.shown = shown ? true : false;
         this.marked = marked ? true : false;
         this.displayContent = '?';
-        this.position = !M.isUndefined(position) ? position : null;
+        this.position = typeof position !== 'undefined' ? position : null;
 
         this.open = function() {
             // If has a mine, return false. If no mine, return true.
             this.shown = true;
             return this.hasMine;
-        }
-
-        this.mark = function() {
-            // If already marked, take away the mark.
-            this.marked = this.marked ? false : true;
-            return this.marked;
         }
     }
 
@@ -43,25 +34,27 @@ function mineSweeper(size, mines, el) {
     var openCell = this.openCell = function(cell) {
         var hitMine;
 
-        if (cell.shown === true) return true;
+        if (cell.shown === true) {
+            return true;
+        }
 
         hitMine = cell.open();
 
-        if (hitMine == false) {
+        if (hitMine == true) {
+            gameFailed();
+            return false;
+        } else {
+
             cell.displayContent = getAdjacentMinesCount(cell);
 
             if (cell.displayContent === 0) {
                 openAdjacentNonMineCells(cell);
             }
-            // renderGrid here at least for now, move to clickHandler or somewhere more later.
-            renderGrid();
+
             if (isGameSolved()) {
                 alert('Congratulations! Game solved!');
             }
             return cell.displayContent;
-        } else {
-            gameFailed();
-            return false;
         }
     }
 
@@ -99,12 +92,11 @@ function mineSweeper(size, mines, el) {
         return mines.length;
     }
 
+    // open adjacent cells that aren't yet shown and don't have a mine
     var openAdjacentNonMineCells = function(cell) {
-        // open adjacent cells that don't have a mine
         var adjacentNonMineCells,
             adjMineCount;
 
-        // get adjacent cells that aren't yet shown and don't have a mine
         adjacentNonMineCells = getAdjacentCells(cell).filter(function(cell) {
             return (!cell.hasMine && !cell.shown);
         });
@@ -175,13 +167,13 @@ function mineSweeper(size, mines, el) {
     }
 
     /*****************************
-     * Utils
+     * Helpers
      *****************************/
 
+     // (x, y) to position index
     var getPos = this.getPos = function(x, y) {
         return y * gridSize + x;
     }
-
 
     /*****************************
      * Rendering
@@ -223,19 +215,26 @@ function mineSweeper(size, mines, el) {
     var openCellHandler = function(event) {
         var cellPos = event.srcElement.getAttribute('data-id');
         openCell(grid[cellPos]);
+        // TODO: find a better place for renderGrid
+        renderGrid();
     }
 
     var attachEvents = function() {
         var el = document.getElementById('msGrid');
         el.addEventListener('click', openCellHandler, true);
-        // TODO: attach events to el
     }
 
-
+    // Init game data
     var constructor = function(size, mines, el) {
+        var mineCountEl = document.createElement('div');
+
+        mineCountEl.setAttribute('id', 'msMineCount');
+        mineCountEl.innerHTML = 'Number of mines: ' + mines;
+        el.appendChild(mineCountEl);
         gridEl = document.createElement('div');
         gridEl.setAttribute('id', 'msGrid');
         el.appendChild(gridEl);
+
         minesCount = mines;
         gridSize = size;
     }
