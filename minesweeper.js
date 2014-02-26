@@ -10,7 +10,7 @@ function mineSweeper(size, mines, el) {
     var grid = [],
         gridSize = null,
         minesCount = null,
-        gridEl = null;
+        gridEl = null,
         parentEl = null;
 
     /******************************
@@ -178,7 +178,12 @@ function mineSweeper(size, mines, el) {
      // (x, y) to position index
     var getPos = this.getPos = function(x, y) {
         return y * gridSize + x;
-    }
+    };
+
+    // For testing purposes.
+    var getGrid = this.getGrid = function() {
+        return grid;
+    };
 
     /*****************************
      * Rendering
