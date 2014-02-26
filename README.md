@@ -14,6 +14,6 @@ The code is the result of a couple of evenings of coding. So if you find somethi
 Installing instructions
 -----------------------
 1. Clone the repository
-2. Fire up your local HTTP-server of choice (on mac you could just run `python -m SimpleHTTPServer 31337` and open localhost:31337 in your browser.
+2. Fire up your local HTTP-server of choice (on mac you could just run `python -m SimpleHTTPServer 31337` and open localhost:31337 in your browser).
 
 
