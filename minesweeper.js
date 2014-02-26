@@ -2,6 +2,7 @@
 // IMPROVEMENT: Add way to change number of mines
 // IMPROVEMENT: Add way to restart
 // IMPROVEMENT: Add way flag mines
+// IMPROVEMENT: Separate presentation layer from game logic?
 
 function mineSweeper(size, mines, el) {
     "use strict"
@@ -10,6 +11,7 @@ function mineSweeper(size, mines, el) {
         gridSize = null,
         minesCount = null,
         gridEl = null;
+        parentEl = null;
 
     /******************************
      * Cell
@@ -40,22 +42,23 @@ function mineSweeper(size, mines, el) {
 
         hitMine = cell.open();
 
-        if (hitMine == true) {
+        // Check if player hit mine
+        if (hitMine === true) {
             gameFailed();
             return false;
-        } else {
-
-            cell.displayContent = getAdjacentMinesCount(cell);
-
-            if (cell.displayContent === 0) {
-                openAdjacentNonMineCells(cell);
-            }
-
-            if (isGameSolved()) {
-                alert('Congratulations! Game solved!');
-            }
-            return cell.displayContent;
         }
+
+        // Check if all non-mine squares are open (-> game solved)
+        if (isGameSolved()) {
+            alert('Congratulations! Game solved!');
+        }
+
+        cell.displayContent = getAdjacentMinesCount(cell);
+        if (cell.displayContent === 0) {
+            openAdjacentNonMineCells(cell);
+        }
+
+        return cell.displayContent;
     }
 
     /*****************************
@@ -126,11 +129,13 @@ function mineSweeper(size, mines, el) {
         renderGrid();
     }
 
+    // Called when player hits a mine.
     var gameFailed = function() {
         showAllCells();
         alert('Too bad! Refresh to replay!');
     }
 
+    // Checks if amount of un-opened cells matches mines count (eg. all non-mine cells have been opened)
     var isGameSolved = function() {
         var unknownCells = grid.filter(function(cell) { return !cell.shown; })
 
@@ -185,33 +190,39 @@ function mineSweeper(size, mines, el) {
 
         if (cell.shown) {
             if (cell.hasMine) {
+                // show mine
                 cellHtml = '<span data-id="' + cell.position + '" class="mine">O</span>';
             } else {
+                // show number of adjacent mines
                 cellHtml = '<span data-id="' + cell.position + '" class="number">';
                 cellHtml += cell.displayContent == 0 ? '&nbsp;' : cell.displayContent;
                 cellHtml += '</span>';
             }
-            return cellHtml;
         } else {
+            // show an unknown cell
             cellHtml = '<span data-id="' + cell.position + '" class="unknown">X</span>';
-            return cellHtml;
         }
+        return cellHtml;
     }
 
+    // Render the whole grid on screen
     var renderGrid = function() {
         var i, j, s;
 
         gridEl.innerHTML = '';
 
+        s = '';
         for (j = 0; j < gridSize; j++) {
-            s = '<div class="row">';
+            s += '<div class="row">';
             for (i = 0; i < gridSize; i++) {
                 s += renderCell(grid[getPos(i, j)]);
             }
-            gridEl.innerHTML += s + '</div>';
+            s += '</div>';
         }
+        gridEl.innerHTML += s;
     }
 
+    // Click handler for a cell
     var openCellHandler = function(event) {
         var cellPos = event.srcElement.getAttribute('data-id');
         openCell(grid[cellPos]);
@@ -219,6 +230,7 @@ function mineSweeper(size, mines, el) {
         renderGrid();
     }
 
+    // Attach click handler to msGrid, check which cell from srcElement. This way no need to re-bind on DOM changes.
     var attachEvents = function() {
         var el = document.getElementById('msGrid');
         el.addEventListener('click', openCellHandler, true);
@@ -228,6 +240,7 @@ function mineSweeper(size, mines, el) {
     var constructor = function(size, mines, el) {
         var mineCountEl = document.createElement('div');
 
+        // TODO: move this html rendering stuff to startGame
         mineCountEl.setAttribute('id', 'msMineCount');
         mineCountEl.innerHTML = 'Number of mines: ' + mines;
         el.appendChild(mineCountEl);
@@ -235,10 +248,13 @@ function mineSweeper(size, mines, el) {
         gridEl.setAttribute('id', 'msGrid');
         el.appendChild(gridEl);
 
+        // Define game variables.
+        parentEl = el;
         minesCount = mines;
         gridSize = size;
     }
 
+    // Start the game, render to screen, attach events, init grid.
     this.startGame = function() {
         initGrid(gridSize, minesCount);
         renderGrid();
