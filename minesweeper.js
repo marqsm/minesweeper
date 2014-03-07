@@ -3,6 +3,13 @@
 // IMPROVEMENT: Add way to restart
 // IMPROVEMENT: Add way flag mines
 // IMPROVEMENT: Separate presentation layer from game logic?
+// TODO: Optimize, some of the more time-consuming functions are called multiple times
+// TODO: Optimize, if can't reduce calls, add memoize to getAdjacentCell and getAdjacentMinesCount?
+
+// Start the game
+var ms = new mineSweeper(10, 10, document.getElementById('mineSweeper'));
+ms.startGame();
+
 
 function mineSweeper(size, mines, el) {
     "use strict"
@@ -73,7 +80,6 @@ function mineSweeper(size, mines, el) {
             isLeftEdge  = x === 0 ? true : false,
             isRightEdge = x === (gridSize - 1) ? true : false;
 
-        //console.log('getAdjacentCells for x:' + x + ' y:' + y );
         // Returns adjacent cells, checks if they are not out of bounds.
         if (!isTopRow)    adjacent.push(grid[getPos(x, y - 1)]);
         if (!isLeftEdge)  adjacent.push(grid[getPos(x - 1, y)]);
@@ -138,7 +144,6 @@ function mineSweeper(size, mines, el) {
     // Checks if amount of un-opened cells matches mines count (eg. all non-mine cells have been opened)
     var isGameSolved = function() {
         var unknownCells = grid.filter(function(cell) { return !cell.shown; })
-
         if (unknownCells.length === minesCount) {
             return true
         }
@@ -212,11 +217,11 @@ function mineSweeper(size, mines, el) {
 
     // Render the whole grid on screen
     var renderGrid = function() {
-        var i, j, s;
+        var i, j,
+            s = '';
 
         gridEl.innerHTML = '';
 
-        s = '';
         for (j = 0; j < gridSize; j++) {
             s += '<div class="row">';
             for (i = 0; i < gridSize; i++) {
@@ -235,7 +240,8 @@ function mineSweeper(size, mines, el) {
         renderGrid();
     }
 
-    // Attach click handler to msGrid, check which cell from srcElement. This way no need to re-bind on DOM changes.
+    // Attach click handler to msGrid, check which cell from srcElement.
+    // This way there's no need to re-bind on DOM changes.
     var attachEvents = function() {
         var el = document.getElementById('msGrid');
         el.addEventListener('click', openCellHandler, true);
@@ -270,6 +276,3 @@ function mineSweeper(size, mines, el) {
 
     return this;
 }
-
-var ms = new mineSweeper(10, 10, document.getElementById('mineSweeper'));
-ms.startGame();

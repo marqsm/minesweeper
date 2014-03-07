@@ -17,3 +17,4 @@ Installing instructions
 2. Fire up your local HTTP-server of choice (on mac you could just run `python -m SimpleHTTPServer 31337` and open localhost:31337 in your browser.
 
 
+For an easy test run, you can just check the [JSFiddle](http://jsfiddle.net/marqs/Yzg4A/1/)
